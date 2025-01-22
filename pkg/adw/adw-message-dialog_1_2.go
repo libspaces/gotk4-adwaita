@@ -3,9 +3,12 @@
 package adw
 
 import (
+	"context"
 	"runtime"
 	"unsafe"
 
+	"github.com/diamondburned/gotk4/pkg/core/gbox"
+	"github.com/diamondburned/gotk4/pkg/core/gcancel"
 	"github.com/diamondburned/gotk4/pkg/core/gextras"
 	coreglib "github.com/diamondburned/gotk4/pkg/core/glib"
 	"github.com/diamondburned/gotk4/pkg/gio/v2"
@@ -15,8 +18,10 @@ import (
 // #include <stdlib.h>
 // #include <adwaita.h>
 // #include <glib-object.h>
+// extern void _gotk4_gio2_AsyncReadyCallback(GObject*, GAsyncResult*, gpointer);
 // extern void _gotk4_adw1_MessageDialog_ConnectResponse(gpointer, gchar*, guintptr);
 // extern void _gotk4_adw1_MessageDialogClass_response(AdwMessageDialog*, char*);
+// extern void _gotk4_adw1_AsyncReadyCallback(GObject*, GAsyncResult*, gpointer);
 // void _gotk4_adw1_MessageDialog_virtual_response(void* fnptr, AdwMessageDialog* arg0, char* arg1) {
 //   ((void (*)(AdwMessageDialog*, char*))(fnptr))(arg0, arg1);
 // };
@@ -39,6 +44,8 @@ type MessageDialogOverrides struct {
 	// ID.
 	//
 	// Used to indicate that the user has responded to the dialog in some way.
+	//
+	// Deprecated: Use alertdialog.
 	//
 	// The function takes the following parameters:
 	//
@@ -104,8 +111,7 @@ func defaultMessageDialogOverrides(v *MessageDialog) MessageDialogOverrides {
 // # Async API
 //
 // AdwMessageDialog can also be used via the messagedialog.Choose method.
-// This API follows the GIO async pattern, and the result can be obtained by
-// calling messagedialog.ChooseFinish, for example:
+// This API follows the GIO async pattern, for example:
 //
 //	static void
 //	dialog_cb (AdwMessageDialog *dialog,
@@ -145,7 +151,7 @@ func defaultMessageDialogOverrides(v *MessageDialog) MessageDialogOverrides {
 //
 // AdwMessageDialog supports adding responses in UI definitions by via the
 // <responses> element that may contain multiple <response> elements, each
-// respresenting a response.
+// representing a response.
 //
 // Each of the <response> elements must have the id attribute specifying the
 // response ID. The contents of the element are used as the response label.
@@ -175,6 +181,8 @@ func defaultMessageDialogOverrides(v *MessageDialog) MessageDialogOverrides {
 // # Accessibility
 //
 // AdwMessageDialog uses the GTK_ACCESSIBLE_ROLE_DIALOG role.
+//
+// Deprecated: Use alertdialog.
 type MessageDialog struct {
 	_ [0]func() // equal guard
 	gtk.Window
@@ -278,7 +286,9 @@ func (self *MessageDialog) ConnectResponse(f func(response string)) coreglib.Sig
 //	dialog = adw_message_dialog_new (parent, _("Replace File?"), NULL);
 //	adw_message_dialog_format_body (ADW_MESSAGE_DIALOG (dialog),
 //	                                _("A file named “s” already exists.  Do you want to replace it?"),
-//	                                filename);.
+//	                                filename);
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -335,6 +345,8 @@ func NewMessageDialog(parent *gtk.Window, heading, body string) *MessageDialog {
 // messagedialog.SetResponseEnabled and messagedialog.SetResponseAppearance can
 // be used to customize the responses further.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - id: response ID.
@@ -356,8 +368,41 @@ func (self *MessageDialog) AddResponse(id, label string) {
 	runtime.KeepAlive(label)
 }
 
+// Choose: this function shows self to the user.
+//
+// Deprecated: Use alertdialog.
+//
+// The function takes the following parameters:
+//
+//   - ctx (optional): GCancellable to cancel the operation.
+//   - callback (optional) to call when the operation is complete.
+func (self *MessageDialog) Choose(ctx context.Context, callback gio.AsyncReadyCallback) {
+	var _arg0 *C.AdwMessageDialog   // out
+	var _arg1 *C.GCancellable       // out
+	var _arg2 C.GAsyncReadyCallback // out
+	var _arg3 C.gpointer
+
+	_arg0 = (*C.AdwMessageDialog)(unsafe.Pointer(coreglib.InternObject(self).Native()))
+	{
+		cancellable := gcancel.GCancellableFromContext(ctx)
+		defer runtime.KeepAlive(cancellable)
+		_arg1 = (*C.GCancellable)(unsafe.Pointer(cancellable.Native()))
+	}
+	if callback != nil {
+		_arg2 = (*[0]byte)(C._gotk4_gio2_AsyncReadyCallback)
+		_arg3 = C.gpointer(gbox.AssignOnce(callback))
+	}
+
+	C.adw_message_dialog_choose(_arg0, _arg1, _arg2, _arg3)
+	runtime.KeepAlive(self)
+	runtime.KeepAlive(ctx)
+	runtime.KeepAlive(callback)
+}
+
 // ChooseFinish finishes the messagedialog.Choose call and returns the response
 // ID.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -388,6 +433,8 @@ func (self *MessageDialog) ChooseFinish(result gio.AsyncResulter) string {
 
 // Body gets the body text of self.
 //
+// Deprecated: Use alertdialog.
+//
 // The function returns the following values:
 //
 //   - utf8: body of self.
@@ -408,6 +455,8 @@ func (self *MessageDialog) Body() string {
 }
 
 // BodyUseMarkup gets whether the body text of self includes Pango markup.
+//
+// Deprecated: Use alertdialog.
 //
 // The function returns the following values:
 //
@@ -432,6 +481,8 @@ func (self *MessageDialog) BodyUseMarkup() bool {
 
 // CloseResponse gets the ID of the close response of self.
 //
+// Deprecated: Use alertdialog.
+//
 // The function returns the following values:
 //
 //   - utf8: close response ID.
@@ -452,6 +503,8 @@ func (self *MessageDialog) CloseResponse() string {
 }
 
 // DefaultResponse gets the ID of the default response of self.
+//
+// Deprecated: Use alertdialog.
 //
 // The function returns the following values:
 //
@@ -475,6 +528,8 @@ func (self *MessageDialog) DefaultResponse() string {
 }
 
 // ExtraChild gets the child widget of self.
+//
+// Deprecated: Use alertdialog.
 //
 // The function returns the following values:
 //
@@ -512,6 +567,8 @@ func (self *MessageDialog) ExtraChild() gtk.Widgetter {
 
 // Heading gets the heading of self.
 //
+// Deprecated: Use alertdialog.
+//
 // The function returns the following values:
 //
 //   - utf8 (optional): heading of self.
@@ -534,6 +591,8 @@ func (self *MessageDialog) Heading() string {
 }
 
 // HeadingUseMarkup gets whether the heading of self includes Pango markup.
+//
+// Deprecated: Use alertdialog.
 //
 // The function returns the following values:
 //
@@ -559,6 +618,8 @@ func (self *MessageDialog) HeadingUseMarkup() bool {
 // ResponseAppearance gets the appearance of response.
 //
 // See messagedialog.SetResponseAppearance.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -590,6 +651,8 @@ func (self *MessageDialog) ResponseAppearance(response string) ResponseAppearanc
 // ResponseEnabled gets whether response is enabled.
 //
 // See messagedialog.SetResponseEnabled.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -624,6 +687,8 @@ func (self *MessageDialog) ResponseEnabled(response string) bool {
 //
 // See messagedialog.SetResponseLabel.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response ID.
@@ -652,6 +717,8 @@ func (self *MessageDialog) ResponseLabel(response string) string {
 }
 
 // HasResponse gets whether self has a response with the ID response.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -684,6 +751,8 @@ func (self *MessageDialog) HasResponse(response string) bool {
 
 // RemoveResponse removes a response from self.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - id: response ID.
@@ -704,6 +773,8 @@ func (self *MessageDialog) RemoveResponse(id string) {
 //
 // Used to indicate that the user has responded to the dialog in some way.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response ID.
@@ -721,6 +792,8 @@ func (self *MessageDialog) Response(response string) {
 }
 
 // SetBody sets the body text of self.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -741,6 +814,8 @@ func (self *MessageDialog) SetBody(body string) {
 // SetBodyUseMarkup sets whether the body text of self includes Pango markup.
 //
 // See pango.ParseMarkup().
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -768,6 +843,8 @@ func (self *MessageDialog) SetBodyUseMarkup(useMarkup bool) {
 //
 // The default close response is close.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response: close response ID.
@@ -791,6 +868,8 @@ func (self *MessageDialog) SetCloseResponse(response string) {
 // If set to NULL or to a non-existent response ID, pressing <kbd>Enter</kbd>
 // will do nothing.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response (optional): default response ID.
@@ -813,6 +892,8 @@ func (self *MessageDialog) SetDefaultResponse(response string) {
 //
 // The child widget is displayed below the heading and body.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - child (optional) widget.
@@ -831,6 +912,8 @@ func (self *MessageDialog) SetExtraChild(child gtk.Widgetter) {
 }
 
 // SetHeading sets the heading of self.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -853,6 +936,8 @@ func (self *MessageDialog) SetHeading(heading string) {
 // SetHeadingUseMarkup sets whether the heading of self includes Pango markup.
 //
 // See pango.ParseMarkup().
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
@@ -889,6 +974,8 @@ func (self *MessageDialog) SetHeadingUseMarkup(useMarkup bool) {
 //
 // Negative responses like Cancel or Close should use the default appearance.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response ID.
@@ -920,6 +1007,8 @@ func (self *MessageDialog) SetResponseAppearance(response string, appearance Res
 //
 // Responses are enabled by default.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response ID.
@@ -947,6 +1036,8 @@ func (self *MessageDialog) SetResponseEnabled(response string, enabled bool) {
 // Labels are displayed on the dialog buttons. An embedded underline in label
 // indicates a mnemonic.
 //
+// Deprecated: Use alertdialog.
+//
 // The function takes the following parameters:
 //
 //   - response ID.
@@ -971,6 +1062,8 @@ func (self *MessageDialog) SetResponseLabel(response, label string) {
 // Response emits the messagedialog::response signal with the given response ID.
 //
 // Used to indicate that the user has responded to the dialog in some way.
+//
+// Deprecated: Use alertdialog.
 //
 // The function takes the following parameters:
 //
